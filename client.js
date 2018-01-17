@@ -28,6 +28,10 @@ function render(todo) {
 // NOTE: These are listeners for events from the server
 // This event is for (re)loading the entire list of todos from the server
 server.on('load', (todos) => {
+    //If the server restarts, must remove the old li
+    while (list.firstChild) {
+        list.removeChild(list.firstChild);
+    }
     todos.forEach((todo) => render(todo));
 });
 

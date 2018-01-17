@@ -2,21 +2,14 @@ const server = require('socket.io')();
 const firstTodos = require('./data');
 const Todo = require('./todo');
 
+// This is going to be our fake 'database' for this application
+// Parse all default Todo's from db
+const DB = firstTodos.map((t) => {
+    // Form new Todo objects
+    return new Todo(title=t.title);
+});
+
 server.on('connection', (client) => {
-    // This is going to be our fake 'database' for this application
-    // Parse all default Todo's from db
-
-    // FIXME: DB is reloading on client refresh. It should be persistent on new client
-    // connections from the last time the server was run...
-    const DB = firstTodos.map((t) => {
-        // Form new Todo objects
-        return new Todo(title=t.title);
-    });
-
-    // Sends a message to the client to reload all todos
-    const reloadTodos = () => {
-        server.emit('load', DB);
-    }
 
     function loadNewTodo(todo) {
         server.emit('update', todo);
@@ -34,7 +27,9 @@ server.on('connection', (client) => {
     });
 
     // Send the DB downstream on connect
-    reloadTodos();
+    // server.emit('load', DB) updates all clients
+    // This only updates the client that connected
+    client.emit('load', DB);
 });
 
 console.log('Waiting for clients to connect');
