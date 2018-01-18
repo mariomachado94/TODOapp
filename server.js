@@ -11,41 +11,28 @@ const DB = firstTodos.map((t) => {
 
 server.on('connection', (client) => {
 
-    function loadNewTodo(todo) {
-        client.broadcast.emit('loadNewTodo', todo);
-    }
-
-    function updateTodo(todo){
-        // Broadcasts update to other clients only
-        client.broadcast.emit('update', todo);
-    }
-
-    function removeTodo(title) {
-        // Broadcasts update to other clients only
-        client.broadcast.emit('remove', title);
-    }
-
     // Accepts when a client makes a new todo
     client.on('make', (todo) => {
         // Make a new todo
         const newTodo = new Todo(title=todo.title);
         // Push this newly created todo to our database
         DB.push(newTodo);
-
-        // Send the new todo to the client
-        loadNewTodo(newTodo);
+        // Send new todo to other clients only
+        client.broadcast.emit('addTodo', todo);
     });
 
+    // Updates a todo on DB, then broadcasts to others
     client.on('update', (todo) => {
         const index = DB.findIndex(t => t.title === todo.title);
         DB[index].completed = todo.completed;
-        updateTodo(todo);
+        client.broadcast.emit('update', todo);
     })
 
+    // Deletes a todo on DB, then broadcasts to others
     client.on('delete', (title) => {
         const index = DB.findIndex(todo => todo.title === title);
         DB.splice(index, 1);
-        removeTodo(title);
+        client.broadcast.emit('remove', title);
     });
 
     client.on('completeAll', () => {

@@ -24,12 +24,19 @@ function add() {
     input.value = '';
 }
 
+// Adds Todo to client display and cache
+function addTodo(todo) {
+    render(todo);
+    cachedTodos.push(todo);
+}
+
 // Complete All button handler
 function completeAll() {
     completeAllTodos();
     server.emit('completeAll');
 }
 
+// Sets all todos in cache to completed
 function completeAllTodos() {
     const items = document.getElementsByClassName("checkbox");
     for (let i = 0; i < items.length; i++) {
@@ -42,6 +49,32 @@ function completeAllTodos() {
 function deleteAll() {
     clearTodos();
     server.emit('deleteAll');
+}
+
+// Clears all Todos from client display and cache
+function clearTodos() {
+    while (list.firstChild) {
+        list.removeChild(list.firstChild);
+    }
+    const items = cachedTodos.length;
+    for (let i = 0; i < items; i++) {
+        cachedTodos.pop();
+    }
+}
+
+// Removes todo from client, and server.
+function remove(title) {
+    removeTodo(title);
+    server.emit('delete', title);
+}
+
+// Removes Todo from client cache and display
+function removeTodo(title) {
+    const index = cachedTodos.findIndex(todo => todo.title === title);
+    cachedTodos.splice(index, 1);
+    // Remove from display
+    const listItem = document.getElementById(title).parentElement;
+    list.removeChild(listItem);
 }
 
 // Checkbox handler
@@ -57,25 +90,6 @@ function updateTodo(title, completed) {
     const index = cachedTodos.findIndex(t => t.title === title);
     cachedTodos[index].completed = completed;
     return cachedTodos[index];
-}
-
-// Removes todo from client, and server.
-function remove(title) {
-    removeTodo(title);
-    server.emit('delete', title);
-}
-
-// Removes Todo from client cache and display
-function removeTodo(title) {
-    const index = cachedTodos.findIndex(todo => todo.title === title);
-    cachedTodos.splice(index, 1);
-    removeTodoElmnt(title);
-}
-
-// Removes Todo from client display
-function removeTodoElmnt(title) {
-    const listItem = document.getElementById(title).parentElement;
-    list.removeChild(listItem);
 }
 
 function render(todo) {
@@ -100,23 +114,6 @@ function render(todo) {
     list.append(listItem);
 }
 
-// Clears all Todos from client display and cache
-function clearTodos() {
-    while (list.firstChild) {
-        list.removeChild(list.firstChild);
-    }
-    const items = cachedTodos.length;
-    for (let i = 0; i < items; i++) {
-        cachedTodos.pop();
-    }
-}
-
-// Adds Todo to client display and cache
-function addTodo(todo) {
-    render(todo);
-    cachedTodos.push(todo);
-}
-
 // NOTE: These are listeners for events from the server
 // This event is for (re)loading the entire list of todos from the server
 server.on('load', (todos) => {
@@ -125,7 +122,7 @@ server.on('load', (todos) => {
     todos.forEach(todo => addTodo(todo));
 });
 
-server.on('loadNewTodo', (todo) =>{
+server.on('addTodo', (todo) =>{
     addTodo(todo);
 });
 
