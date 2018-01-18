@@ -12,7 +12,7 @@ const DB = firstTodos.map((t) => {
 server.on('connection', (client) => {
 
     function loadNewTodo(todo) {
-        server.emit('loadNewTodo', todo);
+        client.broadcast.emit('loadNewTodo', todo);
     }
 
     function updateTodo(todo){
@@ -50,7 +50,7 @@ server.on('connection', (client) => {
 
     client.on('completeAll', () => {
         DB.forEach(todo => todo.completed = true);
-        server.emit('load', DB);
+        client.broadcast.emit('completeAll');
     });
 
     client.on('deleteAll', () => {
@@ -59,7 +59,7 @@ server.on('connection', (client) => {
             DB.pop();
         }
 
-        server.emit('load', DB);
+        client.broadcast.emit('deleteAll');
     });
 
     // Send the DB downstream on connect
