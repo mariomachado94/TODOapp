@@ -6,16 +6,22 @@ const cachedTodos = [];
 // This function adds a new todo from the input
 function add() {
     const input = document.getElementById('todo-input');
-    const todo = {title: input.value, completed: false};
-    addTodo(todo);
-    // Emit the new todo as some data to the server
-    server.emit('make', {
-        title : input.value
-    });
+    // Do not accept empty strings as todo's
+    if(input.value === "") {
+        alert("Must add a title for the TODO!")
+        return;
+    }
 
+    if(cachedTodos.findIndex(todo => todo.title === input.value) == -1) {
+        const todo = {title: input.value, completed: false};
+        addTodo(todo);
+
+        // Emit the new todo as some data to the server
+        server.emit('make', todo);
+        // TODO: refocus the element
+    }
     // Clear the input
     input.value = '';
-    // TODO: refocus the element
 }
 
 // Complete All button handler
