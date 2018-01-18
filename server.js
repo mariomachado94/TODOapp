@@ -20,6 +20,11 @@ server.on('connection', (client) => {
         client.broadcast.emit('update', todo);
     }
 
+    function removeTodo(title) {
+        // Broadcasts update to other clients only
+        client.broadcast.emit('remove', title);
+    }
+
     // Accepts when a client makes a new todo
     client.on('make', (todo) => {
         // Make a new todo
@@ -36,6 +41,13 @@ server.on('connection', (client) => {
         DB[index].completed = todo.completed;
         updateTodo(todo);
     })
+
+    client.on('delete', (title) => {
+        const index = DB.findIndex(todo => todo.title === title);
+        DB.splice(index, 1);
+        console.log(DB);
+        removeTodo(title);
+    });
 
     // Send the DB downstream on connect
     // server.emit('load', DB) updates all clients
