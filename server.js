@@ -45,8 +45,21 @@ server.on('connection', (client) => {
     client.on('delete', (title) => {
         const index = DB.findIndex(todo => todo.title === title);
         DB.splice(index, 1);
-        console.log(DB);
         removeTodo(title);
+    });
+
+    client.on('completeAll', () => {
+        DB.forEach(todo => todo.completed = true);
+        server.emit('load', DB);
+    });
+
+    client.on('deleteAll', () => {
+        const items = DB.length;
+        for (let i = 0; i < items; i++) {
+            DB.pop();
+        }
+
+        server.emit('load', DB);
     });
 
     // Send the DB downstream on connect

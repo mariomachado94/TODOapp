@@ -17,6 +17,14 @@ function add() {
     // TODO: refocus the element
 }
 
+function completeAll() {
+    server.emit('completeAll');
+}
+
+function deleteAll() {
+    server.emit('deleteAll');
+}
+
 function update(title) {
     const todoCheckBox = document.getElementById(title);
 
@@ -38,7 +46,6 @@ function removeTodoElmnt(title) {
 }
 
 function render(todo) {
-    console.log(todo);
     const listItem = document.createElement('li');
 
     const checkBox = document.createElement('input');
@@ -59,13 +66,17 @@ function render(todo) {
     list.append(listItem);
 }
 
+function clearList() {
+    while (list.firstChild) {
+        list.removeChild(list.firstChild);
+    }
+}
+
 // NOTE: These are listeners for events from the server
 // This event is for (re)loading the entire list of todos from the server
 server.on('load', (todos) => {
     //If the server restarts, must remove the old li
-    while (list.firstChild) {
-        list.removeChild(list.firstChild);
-    }
+    clearList();
     todos.forEach((todo) => render(todo));
 });
 
