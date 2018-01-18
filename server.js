@@ -12,19 +12,30 @@ const DB = firstTodos.map((t) => {
 server.on('connection', (client) => {
 
     function loadNewTodo(todo) {
-        server.emit('update', todo);
+        server.emit('loadNewTodo', todo);
+    }
+
+    function updateTodo(todo){
+        // Broadcasts update to other clients only
+        client.broadcast.emit('update', todo);
     }
 
     // Accepts when a client makes a new todo
-    client.on('make', (t) => {
+    client.on('make', (todo) => {
         // Make a new todo
-        const newTodo = new Todo(title=t.title);
+        const newTodo = new Todo(title=todo.title);
         // Push this newly created todo to our database
         DB.push(newTodo);
 
-        // Send the latest todos to the client
+        // Send the new todo to the client
         loadNewTodo(newTodo);
     });
+
+    client.on('update', (todo) => {
+        const index = DB.findIndex(t => t.title === todo.title);
+        DB[index].completed = todo.completed;
+        updateTodo(todo);
+    })
 
     // Send the DB downstream on connect
     // server.emit('load', DB) updates all clients

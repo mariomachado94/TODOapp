@@ -17,10 +17,26 @@ function add() {
     // TODO: refocus the element
 }
 
+function update(title, event) {
+    const todoCheckBox = document.getElementById(title);
+
+    server.emit('update', {
+        title : title,
+        completed : todoCheckBox.checked
+    });
+
+}
+
 function render(todo) {
     console.log(todo);
     const listItem = document.createElement('li');
+    const checkBox = document.createElement('input');
+    checkBox.type = "checkbox";
+    checkBox.checked = todo.completed;
+    checkBox.id = todo.title;
+    checkBox.addEventListener("click", () => update(todo.title));
     const listItemText = document.createTextNode(todo.title);
+    listItem.appendChild(checkBox);
     listItem.appendChild(listItemText);
     list.append(listItem);
 }
@@ -35,6 +51,11 @@ server.on('load', (todos) => {
     todos.forEach((todo) => render(todo));
 });
 
-server.on('update', (todo) =>{
+server.on('loadNewTodo', (todo) =>{
     render(todo);
+});
+
+server.on('update', (todo) => {
+    const todoCheckBox = document.getElementById(todo.title);
+    todoCheckBox.checked = todo.completed;
 });
