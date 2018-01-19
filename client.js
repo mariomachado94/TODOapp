@@ -8,7 +8,7 @@ function add() {
     const input = document.getElementById('todo-input');
     // Do not accept empty strings as todo's
     if(input.value === "") {
-        alert("Must add a title for the TODO!")
+        alert("Must add a title for new TODO's!")
         return;
     }
 
@@ -18,7 +18,6 @@ function add() {
 
         // Emit the new todo as some data to the server
         server.emit('make', todo);
-        // TODO: refocus the element
     }
     // Clear the input
     input.value = '';
@@ -38,11 +37,7 @@ function completeAll() {
 
 // Sets all todos in cache to completed
 function completeAllTodos() {
-    const items = document.getElementsByClassName("checkbox");
-    for (let i = 0; i < items.length; i++) {
-        items[i].checked = true;
-    }
-    cachedTodos.forEach(todo => todo.completed = true);
+    cachedTodos.forEach(todo => updateTodo({title: todo.title, completed: true}));
 }
 
 // Delete button handler
@@ -73,20 +68,35 @@ function removeTodo(title) {
     const index = cachedTodos.findIndex(todo => todo.title === title);
     cachedTodos.splice(index, 1);
     // Remove from display
-    const listItem = document.getElementById(title).parentElement;
+    let listItem = document.getElementById(title);
+    while(listItem.nodeName !== "LI") {
+        listItem = listItem.parentElement;
+    }
     list.removeChild(listItem);
 }
 
 // Checkbox handler
 function update(title) {
+    // const todo = updateTodoWithUI(title);
     const todoCheckBox = document.getElementById(title);
-    const todo = updateTodo(title, todoCheckBox.checked);
+    const todo = updateTodoCache(title, todoCheckBox.checked);
+    const todoText = todoCheckBox.parentElement.parentElement.nextSibling;
+    todoText.className = todoCheckBox.checked ? "form-control list-group-item-secondary" : "form-control";
 
     server.emit('update', todo);
 }
 
-// Updates todo in cache, returns updated todo
-function updateTodo(title, completed) {
+// Used for updates from server
+function updateTodo(todo) {
+    updateTodoCache(todo.title, todo.completed);
+    // update display
+    const todoCheckBox = document.getElementById(todo.title);
+    todoCheckBox.checked = todo.completed;
+    const todoText = todoCheckBox.parentElement.parentElement.nextSibling;
+    todoText.className = todoCheckBox.checked ? "form-control list-group-item-secondary" : "form-control";
+}
+
+function updateTodoCache(title, completed) {
     const index = cachedTodos.findIndex(t => t.title === title);
     cachedTodos[index].completed = completed;
     return cachedTodos[index];
@@ -94,24 +104,17 @@ function updateTodo(title, completed) {
 
 function render(todo) {
     const listItem = document.createElement('li');
-
-    const checkBox = document.createElement('input');
-    checkBox.type = "checkbox";
-    checkBox.checked = todo.completed;
-    checkBox.id = todo.title;
-    checkBox.className = "checkbox";
-    checkBox.addEventListener("click", () => update(todo.title));
-
-    const delBtn = document.createElement('button');
-    delBtn.appendChild(document.createTextNode("Delete"));
-    delBtn.addEventListener("click", () => remove(todo.title));
-
-    const listItemText = document.createTextNode(todo.title);
-    listItem.appendChild(checkBox);
-    listItem.appendChild(listItemText);
-    listItem.appendChild(delBtn);
+    listItem.innerHTML = generateInnerHTML(todo);
+    listItem.className = "list-group-item";
 
     list.append(listItem);
+}
+
+// Static HTML template for a list item utilizing bootstrap
+function generateInnerHTML(todo) {
+    return `<div class="row"><div class="col-9"><div class="input-group"><div class="input-group-prepend"><div class="input-group-text">
+    <input type="checkbox" ${todo.completed ? "checked" : ""} id="${todo.title}" class="checkbox" onclick="update('${todo.title}')"></div></div><span class="${todo.completed ? "form-control list-group-item-secondary": "form-control"}">${todo.title}</span>
+    </div></div><div class="col-3"><button class="btn btn-outline-danger float-right" onclick="remove('${todo.title}')">Delete</button></div></div>`;
 }
 
 // NOTE: These are listeners for events from the server
@@ -122,18 +125,11 @@ server.on('load', (todos) => {
     todos.forEach(todo => addTodo(todo));
 });
 
-server.on('addTodo', (todo) =>{
-    addTodo(todo);
-});
+server.on('addTodo', todo => addTodo(todo));
 
-server.on('update', (todo) => {
-    updateTodo(todo.title, todo.completed);
-    document.getElementById(todo.title).checked = todo.completed;
-});
+server.on('update', todo => updateTodo(todo));
 
-server.on('remove', (title) => {
-    removeTodo(title);
-});
+server.on('remove', title => removeTodo(title));
 
 server.on('completeAll', () => completeAllTodos());
 
